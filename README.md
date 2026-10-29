@@ -1,4 +1,4 @@
-# ♟️ CodeCoach ICPC — Tutor Autônomo de Maratona de Programação
+# ♟️ ICPC AI Tutor — Tutor Autônomo de Maratona de Programação
 
 [![Python 3.11](https://img.shields.io/badge/Python-3.11-blue.svg)](https://www.python.org/)
 [![CrewAI](https://img.shields.io/badge/CrewAI-Multi--Agent-red.svg)](https://www.crewai.com/)
