@@ -36,6 +36,46 @@ O bot orquestra agentes autônomos que debatem internamente antes de responder a
 
 ---
 
+## Documento de Especificação
+
+1. Visão Geral do Produto
+
+Objetivo: Desenvolver um agente tutor para o Discord que auxilie universitários a desenvolverem raciocínio crítico em algoritmos de maratona (ICPC/SBC).
+
+Público-Alvo: Estudantes de nível iniciante e intermediário focados em estruturas de dados, programação dinâmica, grafos, matemática, etc.
+
+Filosofia Pedagógica: Abordagem de Scaffolding (andaime). O agente nunca entrega o código final ou a resposta direta imediatamente. Ele guia o aluno através de dicas progressivas conceituais e de lógica.
+
+Modo Solucionador: O agente possui um "botão de emergência" (ex: um comando de desistência explícito) onde altera seu estado para fornecer a resolução completa caso o aluno trave totalmente.
+
+2. Interação e Interface (I/O)
+
+Plataforma: Discord.
+
+Gatilho de Ação: O agente operará de forma determinística via Slash Commands (ex: /teoria, /debug, /dica).
+
+Isolamento de Sessão: A interação ocorrerá estritamente dentro de Threads específicas criadas para cada dúvida, isolando o contexto e a memória da conversa por aluno/problema.
+
+Entradas Suportadas: Texto natural, links de juízes online (URI/Beecrowd, Codeforces) e blocos de código-fonte (snippets curtos).
+
+3. Fontes de Dados e Ferramentas
+
+Buscador Web / Scraper: Ferramenta ativa para buscar o problema online e, obrigatoriamente, recuperar o Editorial (Ground Truth) correspondente antes de iniciar a tutoria.
+
+Base de Conhecimento: Ingestão de literatura clássica de maratona (ex: Competitive Programming do Halim) para embasamento de explicações teóricas.
+
+Análise de Código: Feita exclusivamente via análise estática do LLM comparada ao editorial (sem execução em terminal/sandbox).
+
+4. Restrições e Métricas
+
+Infraestrutura: APIs comerciais de baixo custo focadas em código (OpenAI gpt-4o-mini ou DeepSeek V3/Coder).
+
+Performance (SLA): Tempo de resposta das interações abaixo de 10 segundos (teto rígido de 15 segundos).
+
+Avaliação de Qualidade: Validação contra um Golden Dataset de problemas e logs de conversas, feedback direto dos alunos, medição da Taxa de Resolução Autônoma e Custo por Sessão.
+
+---
+
 ## 🛠️ Tech Stack
 
 - **Orquestração de IA:** Python, CrewAI, LangChain, Anthropic Claude Code / OpenAI GPT-4.
