@@ -38,7 +38,7 @@ O bot orquestra agentes autônomos que debatem internamente antes de responder a
 
 ## Fase 1 do Desenvolvimento -> Documento de Especificação
 
-1. Visão Geral do Produto
+### 1. Visão Geral do Produto
 
 Objetivo: Desenvolver um agente tutor para o Discord que auxilie universitários a desenvolverem raciocínio crítico em algoritmos de maratona (ICPC/SBC).
 
@@ -48,7 +48,7 @@ Filosofia Pedagógica: Abordagem de Scaffolding (andaime). O agente nunca entreg
 
 Modo Solucionador: O agente possui um "botão de emergência" (ex: um comando de desistência explícito) onde altera seu estado para fornecer a resolução completa caso o aluno trave totalmente.
 
-2. Interação e Interface (I/O)
+### 2. Interação e Interface (I/O)
 
 Plataforma: Discord.
 
@@ -58,7 +58,7 @@ Isolamento de Sessão: A interação ocorrerá estritamente dentro de Threads es
 
 Entradas Suportadas: Texto natural, links de juízes online (URI/Beecrowd, Codeforces) e blocos de código-fonte (snippets curtos).
 
-3. Fontes de Dados e Ferramentas
+### 3. Fontes de Dados e Ferramentas
 
 Buscador Web / Scraper: Ferramenta ativa para buscar o problema online e, obrigatoriamente, recuperar o Editorial (Ground Truth) correspondente antes de iniciar a tutoria.
 
@@ -66,7 +66,7 @@ Base de Conhecimento: Ingestão de literatura clássica de maratona (ex: Competi
 
 Análise de Código: Feita exclusivamente via análise estática do LLM comparada ao editorial (sem execução em terminal/sandbox).
 
-4. Restrições e Métricas
+### 4. Restrições e Métricas
 
 Infraestrutura: APIs comerciais de baixo custo focadas em código (OpenAI gpt-4o-mini ou DeepSeek V3/Coder).
 
@@ -95,6 +95,17 @@ RAG (Teoria): Processo de indexação usando RAG Agêntico (LLM estrutura os res
 Infraestrutura e UX (Discord): Uso de Slash Commands para invocar agentes e criação de Threads dedicadas (interface Discord) para isolar o histórico daquela tutoria.
 
 Gerenciamento de Estado: Arquitetura Stateless (sem estado em RAM). A memória da conversa será gerenciada de forma externa em banco de dados relacional para resiliência. Modelos geridos via LiteLLM para otimização de custo.
+
+---
+
+## Fase 3 do Desenvolvimento -> Frameworks e Ferramentas
+
+- Linguagem: Python.
+- Orquestração de Agentes: CrewAI (Arquitetura Sequencial) integrado com LiteLLM para roteamento de APIs de baixo custo (foco em DeepSeek).
+- Integração com Interface: Pycord, escolhido pela facilidade nativa em lidar com Slash Commands e gerenciamento de Threads do Discord.
+- Banco de Dados Relacional (Memória/Sessões): Supabase (PostgreSQL). Atuará como a fonte da verdade para o histórico das Threads, garantindo que o bot Python seja 100% Stateless (resiliente a falhas e reinicializações).
+- Banco de Dados Vetorial (RAG): ChromaDB rodando localmente com o modo PersistentClient (persistência em disco/volume) para armazenar os embeddings dos livros sem custos recorrentes de nuvem.
+
 
 ## 🛠️ Tech Stack
 
