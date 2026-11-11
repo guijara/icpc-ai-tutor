@@ -36,7 +36,7 @@ O bot orquestra agentes autônomos que debatem internamente antes de responder a
 
 ---
 
-## Documento de Especificação
+## Fase 1 do Desenvolvimento -> Documento de Especificação
 
 1. Visão Geral do Produto
 
@@ -75,6 +75,26 @@ Performance (SLA): Tempo de resposta das interações abaixo de 10 segundos (tet
 Avaliação de Qualidade: Validação contra um Golden Dataset de problemas e logs de conversas, feedback direto dos alunos, medição da Taxa de Resolução Autônoma e Custo por Sessão.
 
 ---
+
+## Fase 2 do Desenvolvimento -> Design e Arquitetura
+
+Arquitetura Base: Sistema Multi-Agente Horizontal (Sequencial) sem execução de código (sandbox), com validação via Análise Estática. Padrão baseado em ReWoo (Planejamento > Ação > Síntese).
+
+Agentes (CrewAI):
+
+Pesquisador: Extrai problema da web e busca o Editorial (Gabarito Oculto).
+
+Analista de Código: Inspeciona sintaxe e valida a complexidade (Big-O) do código do aluno em relação ao Editorial.
+
+Tutor (Comunicador): Gera a resposta com didática de Scaffolding (não dá resposta direta).
+
+Revisor (Reflection): Avalia a saída do Tutor para garantir que os limites pedagógicos não foram violados antes de enviar ao Discord.
+
+RAG (Teoria): Processo de indexação usando RAG Agêntico (LLM estrutura os resumos dos PDFs antes do armazenamento). No fluxo do bot, ocorre apenas busca semântica simples (Retrieve).
+
+Infraestrutura e UX (Discord): Uso de Slash Commands para invocar agentes e criação de Threads dedicadas (interface Discord) para isolar o histórico daquela tutoria.
+
+Gerenciamento de Estado: Arquitetura Stateless (sem estado em RAM). A memória da conversa será gerenciada de forma externa em banco de dados relacional para resiliência. Modelos geridos via LiteLLM para otimização de custo.
 
 ## 🛠️ Tech Stack
 
