@@ -4,36 +4,44 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-The repository is in the specification phase: only `README.md` exists (written in Portuguese). No source code, `requirements.txt`, tests, or tooling has been committed yet. The README documents Phases 1–3 (spec, architecture, frameworks); treat those sections as the source of truth for design decisions. Update this file with real build/test/lint commands once code lands.
+Specification phase: there is no source code, `pyproject.toml`, tests or CI yet. `README.md` (Portuguese, private repo) is the source of truth for product and architecture decisions; `docs/decisoes.md` logs each decision with its alternatives and reasons. `docs/conceitos.md` is the learning map. `docs/plano-do-projeto.md` is a local-only planning document (gitignored). Work happens on the `develop` branch; `main` is not touched until the user says so. Spec changes go through OpenSpec (`openspec/`, `/openspec-propose`). Update this file with real build, lint and test commands once code lands.
 
-The README's setup section references planned entry points that do not exist yet:
-- `pip install -r requirements.txt`
-- `python scripts/ingest_docs.py` — ingest reference material into the vector DB
-- `python src/bot.py` — start the Discord bot
-- `.env` keys: `DISCORD_BOT_TOKEN`, `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, `CHROMADB_PATH` (default `./data/chromadb`)
+Planned tooling (not installed yet): `uv` (env and deps), `ruff` (lint/format), `pytest` (evals that call an LLM get a separate marker and run only on demand), `pydantic-settings` for `.env`, layout `src/icpc_tutor/{bot,agents,tools,rag,db}`, `evals/`, `scripts/`.
 
-## What the product is
+## Working agreement with the user
 
-A Discord tutoring bot for ICPC/SBC competitive programming students at UFMT. Students submit failing code (TLE / WA / RTE), problem links (Beecrowd/URI, Codeforces), or theory questions. The bot answers with **scaffolded, Socratic hints and never gives the solution directly**. The one exception is an explicit "give up" command that switches to a full-solution mode.
+- The user is learning how to build agents. For each piece you implement, briefly explain what it is and why it exists, and keep `docs/conceitos.md` (`[ENTENDER]` vs `[DELEGAR]`) and `docs/decisoes.md` up to date. Do not belabor tooling details like ruff, uv or CI config.
+- Talk to the user in Portuguese (Brazil). Do not implement until the user asks.
 
-## Architecture (decided in README Phases 2–3)
+## Product rules (non-negotiable)
 
-**Sequential (horizontal) multi-agent pipeline in CrewAI, ReWoo-style (Plan → Act → Synthesize):**
-1. **Pesquisador (Researcher):** scrapes the problem statement from the web and *must* fetch the official editorial, which serves as hidden ground truth before tutoring starts.
-2. **Analista de Código (Code Analyst):** checks syntax and Big-O complexity of the student's code against the editorial. This is **static LLM analysis only; code is never executed** (no sandbox).
-3. **Tutor (Communicator):** writes the scaffolded hint.
-4. **Revisor (Reflection):** reviews the Tutor's output and blocks anything that breaks the pedagogical rules (spoilers, full code) before it goes to Discord.
+Discord tutor for ICPC/SBC students at UFMT. The bot **never gives accepted code**; there is no "give up" command. At the end of the hint ladder it may explain the solution in natural language, and a short pseudocode only if the student asks for something more concrete. Hints are always in Portuguese; students send C++ or Python (Java is unsupported).
 
-**RAG (theory):** ChromaDB `PersistentClient` stored on local disk. Indexing is agentic: an LLM writes structured summaries of the source PDFs (e.g. Halim's *Competitive Programming*) before they are stored. At bot runtime, retrieval is plain semantic search only.
+- Commands: only `/problema <link>` (opens a thread) and `/dica` (forces one level up). The bot answers every message inside the thread. Buttons "ajudou" / "não entendi" on replies; "não entendi" makes the Tutor simplify or use a metaphor without raising the level.
+- Hint ladder: 1 understand the problem (questions only), 2 indirect direction (no technique name), 3 name the technique and *why* it applies (recognition signals), 4 apply it in prose. The Tutor decides when to advance (exit goal met, or two answers without progress); never skip levels.
+- No scraping. Codeforces metadata comes from the public API `problemset.problems` (cached); for LeetCode/AtCoder/Beecrowd the student pastes the statement. The editorial is no longer required; weak ground truth = tags + rating + statement.
 
-**Discord layer:** Pycord (picked over discord.py for native slash-command and thread support). Interaction goes through deterministic slash commands (`/teoria`, `/debug`, `/dica`). Each question gets its own thread, which isolates context per student and problem.
+## Architecture
 
-**State:** the bot process is **stateless**, with no conversation state held in RAM. Thread/conversation history lives in Supabase (PostgreSQL), which is the source of truth so the bot survives restarts.
+CrewAI sequential pipeline behind LiteLLM, ReWOO-style, with static analysis only (code is never executed):
 
-**LLM routing:** LiteLLM in front of low-cost code models (DeepSeek V3/Coder preferred; gpt-4o-mini as an alternative).
+1. **Router:** natural language vs. code.
+2. **Pesquisador:** a plain tool, not an LLM agent (regex on the link + Codeforces cache).
+3. **Problem analysis:** shared across students, cached and versioned in Supabase. Stores accepted techniques, recognition cues, a ready hint ladder, a confidence level and an own summary, **not the full statement**. Low confidence (no tags) makes the Tutor assert less.
+4. **Code analysis:** per submission, only when code was sent.
+5. **Tutor** then **Revisor** (deterministic rule check first, LLM that improves the answer second).
 
-## Constraints to respect when implementing
+LLM calls per interaction: 3 with new code, 2 on a continuation, +1 the first time a problem appears. Models via AWS Bedrock (global inference profile, `us-east-1`): Claude Haiku 5.5 for router, Tutor, code analysis and Revisor; Claude Sonnet 5.5 for problem analysis; Titan Text Embeddings V2 for RAG. Run CrewAI outside the bot's event loop and `defer()` every slash command.
 
-- Response latency target is under 10 s, with a hard ceiling of 15 s per interaction. Keep the agent chain and its LLM calls lean.
-- Quality is evaluated against a golden dataset of problems and conversation logs, plus autonomous-resolution rate and cost per session. Design so these can be logged and measured.
-- The README's "Tech Stack" badge section (Discord.py, LangChain, Qdrant, Claude/GPT-4) is older than the Phase 3 decisions. Where they conflict, follow Phase 3: **Pycord, CrewAI + LiteLLM, ChromaDB, Supabase, DeepSeek**.
+**State:** the bot is stateless. Supabase (PostgreSQL) holds `problems`, `problem_analyses`, `threads`, `messages`, `code_analyses`, `feedback`, `students` (Discord ID stored only as HMAC), with a per-thread lock against duplicate events. Messages and code are deleted after 30 days.
+
+**RAG:** ChromaDB `PersistentClient`. Indexing is agentic (an LLM writes fixed-field summaries of each section). Sources: Halim 1 and 2 and cp-algorithms (from its GitHub repo, not scraped). Corpus and queries in English, with a Portuguese-name field. PDFs and the index live in `data/`, outside Git.
+
+**Infra:** EC2 t4g.small (ARM) with an IAM role for 3 months of AWS credit, then Oracle Cloud Free (ARM). Dev (laptop, own bot token and Supabase project) is separate from prod (EC2). CI/CD from the start with GitHub Actions: CI on every PR; CD on merge to `main` via OIDC + Systems Manager, forward-only Supabase migrations, smoke test, rollback to the previous commit.
+
+## Constraints
+
+- SLA: p95 ≤ 20 s for the first hint, hard ceiling 30 s; reply "analisando..." immediately and edit.
+- Treat everything from the student (code, statement, messages) as untrusted input (prompt injection); the Revisor is the last barrier. Do not hand agents tools with side effects.
+- Never commit `.env`, tokens, the book PDFs or the vector index.
+- Quality is measured with a golden dataset, deterministic rules plus an LLM judge (Sonnet 5.5), a single-call baseline, latency, cost per session and autonomous-resolution rate.
