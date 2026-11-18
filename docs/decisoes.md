@@ -96,7 +96,7 @@ Arquivo para você editar à mão: ajuste, reabra ou risque decisões conforme o
 - **Decisão:** AWS Bedrock com o crédito de US$ 120 (3 meses). Claude Haiku 5.5 para roteador, Tutor, análise de código e Revisor; Claude Sonnet 5.5 para a análise do problema; por perfil de inferência global em `us-east-1`, com prompt caching.
 - **Alternativas descartadas:** Gemini via Vertex (créditos do AI Pro incertos), DeepSeek direto (provedor fora do Brasil e sem créditos), Azure for Students (cota de 1 mil tokens por minuto), Nova (indisponível em São Paulo), GPT (caro).
 - **Motivo:** os créditos cobrem o Bedrock, e o Haiku 5.5 tem ótimo custo-benefício.
-- **Em aberto:** os modelos novos não existem em São Paulo, só por inferência global (dados processados fora do Brasil). Conferir no console os IDs dos perfis e o acesso liberado.
+- **Em aberto:** os modelos novos não existem em São Paulo, só por inferência global (dados processados fora do Brasil). IDs globais documentados: `global.anthropic.claude-haiku-5-5` e `global.anthropic.claude-sonnet-5-5`. O prompt caching desses modelos é só explícito (mínimo de 512 tokens por checkpoint). Falta conferir o acesso liberado e as cotas.
 - **Status:** decidido; a avaliação confirma a escolha.
 
 ### D18 — Hospedagem
@@ -134,11 +134,30 @@ Arquivo para você editar à mão: ajuste, reabra ou risque decisões conforme o
 - **Decisão:** o repositório é privado, e o README traz o produto, a arquitetura, a infra e os custos. `docs/conceitos.md` e `docs/decisoes.md` são versionados. `docs/plano-do-projeto.md` fica fora do Git (`.gitignore`).
 - **Status:** decidido.
 
+## Método de desenvolvimento
+
+### D25 — Entrega 80/20, um change por fatia
+- **Decisão:** cada passo do plano é dividido em fatias verticais pequenas, e cada fatia vira um change do OpenSpec, arquivado antes da próxima. As specs em `openspec/specs/` nascem no arquivamento e descrevem só o que já existe. O Passo 1 tem 6 fatias: 1a esqueleto e CI, 1b chamada de teste ao Bedrock, 1c bot Pong, 1d migrations, 1e EC2 com IAM role, 1f CD.
+- **Alternativa:** um único change "fundação" com todo o Passo 1; ou escrever as specs do produto inteiro antes de codar.
+- **Motivo:** entregar o fundamental rápido, ter feedback a cada fatia e não especificar o que ainda não foi usado.
+- **Status:** decidido em 17/11/2026.
+
+### D26 — Estratégia de testes em camadas
+- **Decisão:** cada cenário `WHEN/THEN` de uma spec vira ao menos um teste `pytest`, que cita o cenário. Camadas: unitário (CI em todo PR e push na `develop`, sem rede nem credenciais); integração com Postgres (CI, a partir da fatia 1d); testes marcados `llm` (só sob demanda, nunca no CI); fumaça pós-deploy (CD, fatia 1f); E2E manual no servidor de desenvolvimento.
+- **Motivo:** o Discord não deixa um bot executar slash commands, então não existe E2E automático de `/problema`. Os handlers ficam finos e a lógica é testada com contextos falsos.
+- **Status:** decidido em 17/11/2026.
+
+### D27 — Configuração e isolamento dos testes (fatia 1a)
+- **Decisão:** `Settings` (`pydantic-settings`) obtido por `get_settings()`, que valida na primeira chamada, nunca no import. `APP_ENV` (`dev`/`prod`) é obrigatória e sem padrão; `LOG_LEVEL` é opcional, com padrão `INFO`. Segredos usam `SecretStr`, e o modelo usa `hide_input_in_errors=True`, porque sem isso o pydantic repete o valor recebido na mensagem de erro (um teste confirma o vazamento sem a opção). Os testes padrão rodam com a rede bloqueada por uma fixture própria em `tests/conftest.py`; os marcados `llm` ficam fora por padrão (`addopts = -m "not llm"`). O Python 3.11 é instalado pelo próprio `uv` (`uv python install 3.11`), porque o `uv` do Fedora não baixa Python sozinho.
+- **Alternativa:** instância global no import; pular testes por variável de ambiente; o pacote `pytest-socket`.
+- **Motivo:** import nunca quebra, testes injetam valores sem tocar no `.env` real, e o CI não tem como chamar um modelo ou vazar um segredo por engano.
+- **Status:** decidido em 17/11/2026.
+
 ---
 
 ## Pendências abertas
 
-- IDs dos perfis de inferência global do Haiku 5.5 e do Sonnet 5.5 em `us-east-1`, e acesso liberado.
+- Acesso liberado ao Haiku 5.5 e ao Sonnet 5.5 em `us-east-1`, cotas da conta e confirmação de que o crédito cobre a cobrança via Marketplace. IDs dos perfis globais, segundo as páginas oficiais da AWS: `global.anthropic.claude-haiku-5-5` e `global.anthropic.claude-sonnet-5-5` (a confirmar com `aws bedrock list-inference-profiles`).
 - Problemas e editoriais do golden dataset.
 - Projeto gratuito do Supabase pode ser pausado após uma semana sem uso (conferir).
 - Idiomas do Titan V2, licença do cp-algorithms e cópias legítimas do Halim.

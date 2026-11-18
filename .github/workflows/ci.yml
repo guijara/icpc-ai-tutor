@@ -1,0 +1,38 @@
+# CI: lint e testes em todo PR e em todo push na develop.
+# Nenhum segredo é usado; os testes marcados `llm` ficam de fora (pyproject.toml).
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [develop]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v5
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      - name: Instalar dependências (falha se o uv.lock estiver desatualizado)
+        run: uv sync --locked
+
+      - name: Lint
+        run: uv run ruff check
+
+      - name: Formatação
+        run: uv run ruff format --check
+
+      - name: Testes
+        run: uv run pytest

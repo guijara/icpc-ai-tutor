@@ -45,3 +45,21 @@ LLM calls per interaction: 3 with new code, 2 on a continuation, +1 the first ti
 - Treat everything from the student (code, statement, messages) as untrusted input (prompt injection); the Revisor is the last barrier. Do not hand agents tools with side effects.
 - Never commit `.env`, tokens, the book PDFs or the vector index.
 - Quality is measured with a golden dataset, deterministic rules plus an LLM judge (Sonnet 5.5), a single-call baseline, latency, cost per session and autonomous-resolution rate.
+
+## Human vs. agent tasks
+
+- Tasks marked `[HUMAN]` in `tasks.md` are actions only the user can perform
+  (creating accounts, generating tokens, configuring cloud resources, approving spend).
+  Never attempt them yourself.
+- When you reach a `[HUMAN]` task, stop, list exactly what the user must do,
+  and wait for confirmation before continuing.
+- Before depending on a human task, verify its result when possible
+  (e.g., check that an environment variable exists or that a connection test passes).
+  If the check fails, stop and report what is missing. Do not invent values.
+- Never create, guess, or hardcode credentials, tokens, account IDs, or other secrets.
+- Tasks marked `[AGENT]` are yours to implement. Follow the requirements and
+  scenarios in the active change's spec, and report any scenario that has no test.
+- If a `[AGENT]` task depends on a `[HUMAN]` task, state the dependency
+  (e.g., `blocked by: 1.2`) and do not proceed past it.
+- For infrastructure changes, prepare the plan or configuration as a file for
+  the user to review. Do not apply changes to cloud accounts without explicit approval.
