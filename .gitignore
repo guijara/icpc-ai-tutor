@@ -1,0 +1,20 @@
+# Segredos
+.env
+.env.*
+!.env.example
+DISCORD_TOKEN
+ANTHROPIC_API_KEY
+
+# Python
+.venv/
+venv/
+__pycache__/
+*.pyc
+.ruff_cache/
+.pytest_cache/
+
+# Dados locais (índice do RAG e materiais com direitos autorais)
+data/
+
+# Documentação interna (não versionada)
+docs/plano-do-projeto.md
