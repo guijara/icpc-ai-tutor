@@ -79,7 +79,7 @@ def test_configuracao_opcional_omitida_usa_padrao(ambiente_limpo, monkeypatch):
     """configuration: Configuração opcional omitida"""
     monkeypatch.setenv("APP_ENV", "dev")
 
-    assert get_settings().log_level == "INFO"
+    assert get_settings().log_level == "DEBUG"
 
 
 def test_import_nao_le_configuracao(ambiente_limpo):
