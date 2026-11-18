@@ -61,6 +61,10 @@ O *golden dataset* é um conjunto de casos com resposta esperada, para medir o b
 Um LLM faz o papel de um aluno com uma persona (por exemplo, quem trava e pede a resposta) e conversa sozinho com o bot, para testar a escada de dicas em vários turnos. Fica para a segunda fase.
 **Verifique:** o que o aluno simulado mede que um teste de uma só mensagem não mede?
 
+### Testes em camadas e o marcador `llm`
+Testes de código comum são determinísticos, rápidos e grátis; testes que chamam um LLM são lentos, custam dinheiro e podem dar respostas diferentes a cada execução. Por isso a suíte é dividida em camadas: os testes padrão rodam em todo PR, sem rede e sem credenciais (uma fixture bloqueia qualquer conexão), e os testes marcados `llm` só rodam quando você pede (`uv run pytest -m llm`). Assim o CI nunca gasta crédito, e um teste que acessasse a rede por engano falha na hora, em vez de passar ou falhar conforme a internet.
+**Verifique:** por que um teste que chama o Bedrock não pode rodar no CI de todo PR, e o que acontece se um teste padrão tentar abrir uma conexão?
+
 ## [ENTENDER] Custo, latência e modelos
 
 ### Tokens, custo e escolha por papel
