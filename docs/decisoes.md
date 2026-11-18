@@ -112,6 +112,7 @@ Arquivo para você editar à mão: ajuste, reabra ou risque decisões conforme o
 ### D20 — CI/CD desde o início
 - **Decisão:** GitHub Actions. CI em todo PR (`ruff` e testes unitários). CD no merge na `main`: migrations do Supabase (só para frente), deploy por OIDC + Systems Manager, teste de fumaça, reversão pelo commit anterior. Avaliação completa só sob demanda.
 - **Alternativa:** deploy manual no MVP.
+- **Check obrigatório:** o CI só reporta o resultado no PR; o check não bloqueia o merge na `develop` (decidido em 17/11/2026, pode ser revisto).
 - **Status:** decidido.
 
 ### D21 — Base do projeto

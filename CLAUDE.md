@@ -4,9 +4,25 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project status
 
-Specification phase: there is no source code, `pyproject.toml`, tests or CI yet. `README.md` (Portuguese, private repo) is the source of truth for product and architecture decisions; `docs/decisoes.md` logs each decision with its alternatives and reasons. `docs/conceitos.md` is the learning map. `docs/plano-do-projeto.md` is a local-only planning document (gitignored). Work happens on the `develop` branch; `main` is not touched until the user says so. Spec changes go through OpenSpec (`openspec/`, `/openspec-propose`). Update this file with real build, lint and test commands once code lands.
+Skeleton phase (slice 1a done): Python 3.11 project with typed configuration (`src/icpc_tutor/config.py`), unit tests and CI. No bot behavior yet. `README.md` (Portuguese, private repo) is the source of truth for product and architecture decisions; `docs/decisoes.md` logs each decision with its alternatives and reasons. `docs/conceitos.md` is the learning map. `docs/plano-do-projeto.md` is a local-only planning document (gitignored). Work happens on the `develop` branch; `main` is not touched until the user says so. Spec changes go through OpenSpec (`openspec/`, `/openspec-propose`).
 
-Planned tooling (not installed yet): `uv` (env and deps), `ruff` (lint/format), `pytest` (evals that call an LLM get a separate marker and run only on demand), `pydantic-settings` for `.env`, layout `src/icpc_tutor/{bot,agents,tools,rag,db}`, `evals/`, `scripts/`.
+Tooling: `uv` (env and deps, Python 3.11 pinned by `.python-version`), `ruff` (lint/format), `pytest`, `pydantic-settings` for `.env`. Planned layout `src/icpc_tutor/{bot,agents,tools,rag,db}`, `evals/`, `scripts/`.
+
+## Commands
+
+```bash
+uv python install 3.11        # once; Fedora's uv does not download Python automatically
+uv sync --locked              # install exact deps from uv.lock (fails if the lock is stale)
+uv run ruff check             # lint
+uv run ruff format --check    # formatting check (drop --check to apply)
+uv run pytest                 # default suite: excludes `llm` tests, network blocked
+uv run pytest -m llm          # only tests that call an LLM (opt-in, never in CI)
+uv run pytest tests/unit/test_config.py::test_configuracao_opcional_omitida_usa_padrao  # single test
+```
+
+After changing dependencies, run `uv lock` and commit `uv.lock`. Copy `.env.example` to `.env` for local runs (`APP_ENV` is required). CI (`.github/workflows/ci.yml`) runs the same four checks on every PR and push to `develop`, with no secrets.
+
+Test conventions: each test's docstring cites the spec scenario it validates (`"""configuration: <scenario>"""`). Tests must not read the real `.env` (chdir to `tmp_path`, `get_settings.cache_clear()`). An autouse fixture in `tests/conftest.py` blocks sockets except for `@pytest.mark.llm` tests. Secrets use `SecretStr`; `Settings` keeps `hide_input_in_errors=True`.
 
 ## Working agreement with the user
 

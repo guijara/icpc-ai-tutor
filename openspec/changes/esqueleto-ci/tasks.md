@@ -25,9 +25,9 @@ Convenção: todo teste cita no docstring o cenário da spec que valida (ex.: `"
 ## 4. CI
 
 - [x] 4.1 [AGENT] Criar `.github/workflows/ci.yml` com gatilhos `pull_request` e `push` em `develop`, rodando `uv sync --locked`, `ruff check`, `ruff format --check` e `pytest`, sem nenhum segredo; verificar localmente que os mesmos comandos passam
-- [ ] 4.2 [HUMAN] Autorizar o push na `develop` e confirmar o cenário "Push na develop": o workflow aparece verde na aba Actions
-- [ ] 4.3 [HUMAN] Validar os cenários "PR aberto com mudanças válidas" e "PR com falha de teste": abrir pelo site um PR de teste com um teste quebrado, confirmar o check vermelho e o nome do teste no relatório, e fechar o PR sem merge
-- [ ] 4.4 [AGENT] Atualizar `CLAUDE.md` com os comandos reais de build, lint e teste (removendo o "not installed yet"); verificar que cada comando citado roda como escrito (blocked by: 4.2)
+- [x] 4.2 [HUMAN] Autorizar o push na `develop` e confirmar o cenário "Push na develop": o workflow aparece verde na aba Actions
+- [x] 4.3 [HUMAN] Validar os cenários "PR aberto com mudanças válidas" e "PR com falha de teste": abrir pelo site um PR de teste com um teste quebrado, confirmar o check vermelho e o nome do teste no relatório, e fechar o PR sem merge
+- [x] 4.4 [AGENT] Atualizar `CLAUDE.md` com os comandos reais de build, lint e teste (removendo o "not installed yet"); verificar que cada comando citado roda como escrito (blocked by: 4.2)
 
 ## Workflow follow-up
 
